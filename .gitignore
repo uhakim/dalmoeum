@@ -1,0 +1,17 @@
+data/
+__pycache__/
+.venv/
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+secret.key
+.env
+.env.*
+.vercel/
+preview-*.png
+preview-*.pdf
+*.zip
+node_modules/
+dist/
+supabase/.temp/
+supabase/.branches/

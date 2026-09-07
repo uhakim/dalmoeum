@@ -1,0 +1,13 @@
+{
+  "name": "dalmoeum-classroom",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/supabase.test.mjs",
+    "test:browser": "python tests/test_supabase_browser.py"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.0",
+    "qrcode": "1.5.4"
+  }
+}

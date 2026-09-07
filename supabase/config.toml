@@ -1,0 +1,6 @@
+project_id = "dalmoeum"
+
+[functions.classroom]
+# The function verifies its own opaque classroom sessions on every request.
+verify_jwt = false
+

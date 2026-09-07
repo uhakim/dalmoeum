@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: dalmoeum-classroom
+    runtime: python
+    plan: 0.5c-512mb
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py serve --host 0.0.0.0
+    healthCheckPath: /api/health
+    disk:
+      name: classroom-data
+      mountPath: /var/data/dalmoeum
+      sizeGB: 1
+    envVars:
+      - key: DAL_DATA_DIR
+        value: /var/data/dalmoeum
+      - key: DAL_SECURE_COOKIES
+        value: "1"
+      - key: DAL_CLASS_NAME
+        sync: false
+      - key: DAL_INITIAL_PASSWORD
+        sync: false
