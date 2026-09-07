@@ -6,6 +6,21 @@ window.classroomReady = (async () => {
   gate.className = 'access-gate';
   gate.innerHTML = '<a class="brand" href="/">☾ 달모음</a><h1>우리 반 달 관찰 일지</h1><p>선생님에게 받은 나만의 접속 링크로 들어와 주세요.<br>링크는 다른 친구에게 공유하지 않아요.</p><form id="student-access"><label for="access-code">학생 접속 링크 또는 코드</label><input id="access-code" autocomplete="off" spellcheck="false" required><button class="primary" type="submit">내 기록장 열기</button></form><p id="access-message" role="status">접속을 확인하고 있어요…</p><a href="/teacher.html">선생님 관리 화면 →</a>';
   document.body.append(gate);
+  if(DalCloud.enabled){
+    gate.querySelector('p').textContent='우리 반과 번호를 고르고 선생님에게 받은 4자리 PIN을 입력해 주세요.';
+    const legacy=gate.querySelector('#student-access'),details=document.createElement('details'),summary=document.createElement('summary');
+    summary.textContent='기존 접속 링크로 들어가기';details.append(summary);legacy.before(details);details.append(legacy);
+    const form=document.createElement('form');form.id='student-pin-access';
+    form.innerHTML='<label for="student-class">우리 반</label><select id="student-class" required><option value="">반을 선택해 주세요</option></select><label for="student-number">번호</label><input id="student-number" type="number" inputmode="numeric" min="1" max="40" required placeholder="예: 7"><label for="student-pin">4자리 PIN</label><input id="student-pin" type="password" inputmode="numeric" pattern="[0-9]{4}" minlength="4" maxlength="4" autocomplete="current-password" required placeholder="선생님에게 받은 숫자 4자리"><button class="primary" type="submit">내 기록장 열기</button>';
+    details.before(form);
+    form.onsubmit=async event=>{
+      event.preventDefault();const button=form.querySelector('button');button.disabled=true;
+      try{await enter({classId:Number(document.getElementById('student-class').value),number:Number(document.getElementById('student-number').value),pin:document.getElementById('student-pin').value});}
+      catch(error){document.getElementById('access-message').textContent=error.message;}
+      finally{button.disabled=false;}
+    };
+    request('/api/classrooms').then(data=>{for(const c of data.classrooms)document.getElementById('student-class')?.add(new Option(c.name,String(c.id)));}).catch(error=>{const message=document.getElementById('access-message');if(message)message.textContent=error.message;});
+  }
   let resolveLogin;
   const waitLogin = new Promise(resolve => { resolveLogin = resolve; });
   async function request(path, options = {}) {
@@ -17,7 +32,7 @@ window.classroomReady = (async () => {
     return data;
   }
   async function enter(token) {
-    await request('/api/auth/student', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token})});
+    await request(typeof token==='string'?'/api/auth/student':'/api/auth/student-pin', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(typeof token==='string'?{token}:token)});
     const account = await request('/api/me');
     history.replaceState(null, '', '/');
     resolveLogin(account);
@@ -36,7 +51,7 @@ window.classroomReady = (async () => {
   try {
     account = token ? await enter(token) : await request('/api/me');
   } catch(error) {
-    document.getElementById('access-message').textContent = token || error.status !== 401 ? error.message : '개별 링크가 없으면 담임선생님에게 요청해 주세요.';
+    document.getElementById('access-message').textContent = token || error.status !== 401 ? error.message : DalCloud.enabled?'PIN을 모르면 담임선생님에게 물어보세요.':'개별 링크가 없으면 담임선생님에게 요청해 주세요.';
     account = await waitLogin;
   }
   if (account.role === 'teacher') { location.replace(DalCloud.enabled?'/teacher.html':'/teacher'); return new Promise(() => {}); }

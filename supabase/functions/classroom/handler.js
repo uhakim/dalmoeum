@@ -30,6 +30,11 @@ export function createHandler({rpc, origin, qr}) {
       };
       const month = () => {const value=url.searchParams.get('month');if(!/^(19\d{2}|20\d{2}|2100)-(0[1-9]|1[0-2])$/.test(value||''))throw Error('관찰 월을 확인해 주세요.');return value;};
       const name = value => {if(typeof value!=='string'||!value.trim()||[...value.trim()].length>30)throw Error('이름은 1~30자로 입력해 주세요.');return value.trim();};
+      if(path==='/api/classrooms'&&method==='GET')return json(await call('public_classrooms'));
+      if(path==='/api/auth/student-pin'&&method==='POST') {
+        if(!Number.isInteger(body.classId)||body.classId<1||body.classId>4||!Number.isInteger(body.number)||body.number<1||body.number>40||typeof body.pin!=='string'||!/^\d{4}$/.test(body.pin))throw Error('반, 번호, 4자리 PIN을 확인해 주세요.');
+        return json(await call('login_pin',{classId:body.classId,number:body.number,pin:body.pin}));
+      }
       if(path==='/api/auth/teacher'&&method==='POST') {
         if(typeof body.password!=='string'||body.password.length>200)throw Error('비밀번호를 확인해 주세요.');
         const username=body.username??'teacher1';
@@ -58,11 +63,12 @@ export function createHandler({rpc, origin, qr}) {
         if(typeof body.current!=='string'||typeof body.password!=='string'||body.current.length>200||[...body.password].length<12||new TextEncoder().encode(body.password).length>72)throw Error('새 비밀번호는 12자 이상, UTF-8 72바이트 이하여야 해요.');
         return json(await call('password',{current:body.current,password:body.password}));
       }
-      const match=/^\/api\/teacher\/students\/(\d+)(?:\/(reset-link|qr.svg|backup))?$/.exec(path);
+      const match=/^\/api\/teacher\/students\/(\d+)(?:\/(reset-link|reset-pin|qr.svg|backup))?$/.exec(path);
       if(match) {
         const id=Number(match[1]);
         if(!match[2]&&method==='PATCH')return json(await call('rename_student',{id,name:name(body.name)}));
         if(match[2]==='reset-link'&&method==='POST')return json(await call('reset_link',{id}));
+        if(match[2]==='reset-pin'&&method==='POST')return json(await call('reset_pin',{id}));
         if(match[2]==='backup'&&method==='GET')return json(await call('backup_student',{id}));
         if(match[2]==='qr.svg'&&method==='GET') {
           const invitations=await call('invitations'),student=invitations.students.find(s=>s.id===id);

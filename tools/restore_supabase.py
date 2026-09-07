@@ -54,7 +54,7 @@ def main():
     if backup['classId'] != args.class_id:
         raise ValueError('Backup and destination classroom differ; no data changed')
     print(f"Restore {backup['className']}: {len(backup['students'])} students. Current data will be backed up first.")
-    print(f'Only classroom {args.class_id} is restored. Its password is preserved; its links and sessions are replaced.')
+    print(f'Only classroom {args.class_id} is restored. Its password is preserved; its links, student PINs and sessions are replaced.')
     if input('Type RESTORE to continue: ') != 'RESTORE':
         raise SystemExit('Cancelled')
     import psycopg

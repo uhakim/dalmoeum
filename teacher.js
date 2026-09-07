@@ -6,6 +6,17 @@
     const select=document.createElement('select');select.id='teacher-username';select.name='username';select.autocomplete='username';
     for(let i=1;i<=4;i++){const option=document.createElement('option');option.value='teacher'+i;option.textContent='관리자 '+i+' (teacher'+i+')';select.append(option);}
     $('login-form').prepend(label,select);
+    const box=document.createElement('section');box.id='pin-info';box.className='dialog-copy';
+    box.innerHTML='<p id="pin-identity"></p><label for="issued-pin">학생 로그인 PIN</label><input id="issued-pin" class="link-field" readonly><p id="pin-status"></p><button id="reset-pin" class="secondary" type="button">PIN 재발급 / 잠금 해제</button>';
+    $('invite-link').before(box);
+    $('invite-dialog').querySelector('.dialog-copy').textContent='학생은 공통 사이트에서 반·번호·PIN으로 접속할 수 있어요. 아래 PIN은 해당 학생에게만 전달해 주세요.';
+    document.querySelector('.teacher-help').textContent='학생 이름을 입력한 뒤 ‘접속 정보’에서 PIN을 확인해 해당 학생에게 전달하세요. 학생은 공통 사이트에서 반·번호·PIN으로 접속합니다. PIN을 잊었거나 잠겼다면 재발급할 수 있어요.';
+    $('reset-pin').onclick=async()=>{
+      if(!inviteStudent||!confirm('새 PIN을 발급하고 이 학생의 기존 로그인을 해제할까요? 기록은 유지됩니다.'))return;
+      const button=$('reset-pin');button.disabled=true;
+      try{const result=await api('/api/teacher/students/'+inviteStudent.id+'/reset-pin','POST',{});$('issued-pin').value=result.pin;$('pin-status').textContent='새 PIN을 해당 학생에게 전달해 주세요.';toast('PIN을 재발급했어요.');}
+      catch(error){toast(error.message);}finally{button.disabled=false;}
+    };
   }
   let account, students=[], selected=new Set(), loadSequence=0, inviteStudent=null, editTarget=null, toastTimer;
   const now=new Date();$('report-month').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
@@ -18,7 +29,7 @@
     if(!response.ok){if(response.status===401&&account){showLogin();throw Error('로그인 시간이 끝났어요. 다시 로그인해 주세요.');}throw Error(data.error||'요청에 실패했어요.');}
     return data;
   }
-  function showLogin(){$('teacher-app').hidden=true;$('teacher-login').hidden=false;$('roster').replaceChildren();students=[];account=null;document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('invite-link').value='';}
+  function showLogin(){$('teacher-app').hidden=true;$('teacher-login').hidden=false;$('roster').replaceChildren();students=[];account=null;document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('invite-link').value='';if(DalCloud.enabled){$('issued-pin').value='';$('pin-identity').textContent='';$('pin-status').textContent='';}}
   async function enter(){account=await api('/api/me');if(account.role!=='teacher'){showLogin();throw Error('학생으로 접속 중이에요. 선생님 비밀번호로 로그인해 주세요.');}$('teacher-login').hidden=true;$('teacher-app').hidden=false;await loadRoster(true);}
   $('login-form').onsubmit=async event=>{event.preventDefault();$('login-button').disabled=true;$('login-error').textContent='';try{await api('/api/auth/teacher','POST',{password:$('teacher-password').value,...(DalCloud.enabled?{username:$('teacher-username').value}:{})});$('teacher-password').value='';await enter();}catch(error){$('login-error').textContent=error.message;}finally{$('login-button').disabled=false;}};
   async function loadRoster(selectAll=false){
@@ -38,7 +49,7 @@
       const count=document.createElement('td'),pill=document.createElement('span');pill.className='status-pill'+(student.days?'':' empty');pill.textContent=student.days?`${student.days}일 관찰 · 사진 ${student.photos}장`:'아직 기록 없음';count.append(pill);row.append(count);
       const last=document.createElement('td');last.textContent=student.lastDate||'—';row.append(last);
       const reflection=document.createElement('td');reflection.textContent=student.hasReflection?'작성함':'—';row.append(reflection);
-      const actions=document.createElement('td'),group=document.createElement('div');group.className='row-actions';group.append(button('보고서',()=>openReports([student.id])),button('접속 링크',()=>openInvitation(student)));actions.append(group);row.append(actions);$('roster').append(row);
+      const actions=document.createElement('td'),group=document.createElement('div');group.className='row-actions';group.append(button('보고서',()=>openReports([student.id])),button(DalCloud.enabled?'접속 정보':'접속 링크',()=>openInvitation(student)));actions.append(group);row.append(actions);$('roster').append(row);
     }
     $('roster-message').hidden=students.length>0;selection();
   }
@@ -50,7 +61,7 @@
   function openName(student=null){editTarget=student;$('name-title').textContent=student?`${student.number}번 학생 이름`:'학급 이름';$('new-name').value=student?student.name:account.className;$('name-dialog').showModal();$('new-name').select();}
   $('edit-class').onclick=()=>openName();$('close-name').onclick=()=>$('name-dialog').close();
   $('name-form').onsubmit=async event=>{event.preventDefault();const b=event.target.querySelector('[type=submit]');b.disabled=true;try{if(editTarget)await api('/api/teacher/students/'+editTarget.id,'PATCH',{name:$('new-name').value.trim()});else await api('/api/teacher/classroom','PATCH',{className:$('new-name').value.trim()});$('name-dialog').close();await loadRoster();toast('이름을 저장했어요.');}catch(error){toast(error.message);}finally{b.disabled=false;}};
-  async function openInvitation(student){try{const result=await api('/api/teacher/invitations');const invitation=result.students.find(s=>s.id===student.id);if(!invitation)throw Error('학생을 찾지 못했어요.');inviteStudent=student;$('invite-title').textContent=`${student.number}번 ${student.name} 접속 링크`;$('invite-link').value=location.origin+invitation.path;$('invite-dialog').showModal();}catch(error){toast(error.message);}}
+  async function openInvitation(student){try{const result=await api('/api/teacher/invitations');const invitation=result.students.find(s=>s.id===student.id);if(!invitation)throw Error('학생을 찾지 못했어요.');inviteStudent=student;$('invite-title').textContent=`${student.number}번 ${student.name} 접속 링크`;$('invite-link').value=location.origin+invitation.path;if(DalCloud.enabled){$('invite-title').textContent=student.number+'번 '+student.name+' 접속 정보';$('pin-identity').textContent=account.className+' / '+student.number+'번';$('issued-pin').value=invitation.pin;$('pin-status').textContent=invitation.pinLocked?'PIN이 잠겼어요. 재발급해 주세요.':'공통 사이트에서 반, 번호, 이 PIN을 입력하면 됩니다.';}$('invite-dialog').showModal();}catch(error){toast(error.message);}}
   $('close-invite').onclick=()=>$('invite-dialog').close();
   $('copy-invite').onclick=async()=>{try{await navigator.clipboard.writeText($('invite-link').value);toast('링크를 복사했어요. 해당 학생 가정에 전달해 주세요.');}catch{$('invite-link').select();toast('링크를 길게 누르거나 Ctrl+C로 복사해 주세요.');}};
   $('reset-invite').onclick=async()=>{if(!inviteStudent||!confirm('이 학생의 기존 링크와 로그인을 해제하고 새 링크를 발급할까요? 기록은 유지됩니다.'))return;try{const result=await api('/api/teacher/students/'+inviteStudent.id+'/reset-link','POST',{});$('invite-link').value=location.origin+result.path;toast('새 링크를 발급했어요. 해당 가정에 다시 전달해 주세요.');}catch(error){toast(error.message);}};

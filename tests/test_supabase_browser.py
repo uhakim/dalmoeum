@@ -31,7 +31,12 @@ def run():
             student = student_context.new_page()
             student.on('dialog', lambda dialog: dialog.accept())
             student.on('pageerror', lambda error: errors.append(str(error)))
-            student.goto(origin + info['invitations'][0]['path'])
+            student.goto(origin)
+            student.locator('#student-class option[value="1"]').wait_for(state='attached')
+            student.locator('#student-class').select_option('1')
+            student.locator('#student-number').fill('1')
+            student.locator('#student-pin').fill(info['invitations'][0]['pin'])
+            student.locator('#student-pin-access button').click()
             student.locator('#record-today').wait_for(state='visible')
             student.locator('#record-today').click()
             student.locator('#record-date').fill('2026-09-07')
@@ -102,15 +107,26 @@ def run():
             assert 'token' not in backup and 'invitation' not in backup['students'][0]
 
             # Existing links and sessions really stop working after teacher reset.
-            teacher.locator('#roster tr').first.get_by_role('button',name='접속 링크',exact=True).click()
+            teacher.locator('#roster tr').first.get_by_role('button',name='접속 정보',exact=True).click()
             teacher.locator('#invite-link').wait_for(state='visible')
             previous=teacher.locator('#invite-link').input_value()
+            assert teacher.locator('#issued-pin').input_value()==info['invitations'][0]['pin']
             teacher.on('dialog',lambda dialog:dialog.accept())
             teacher.locator('#reset-invite').click()
             teacher.wait_for_function('(previous)=>document.querySelector("#invite-link").value!==previous',arg=previous)
             student.reload()
-            student.locator('#student-access').wait_for(state='visible')
+            student.locator('#student-pin-access').wait_for(state='visible')
             assert not student.locator('#record-today').is_visible()
+            # Reissuing PIN keeps observations, invalidates the old PIN and allows number login.
+            old_pin=teacher.locator('#issued-pin').input_value()
+            teacher.locator('#reset-pin').click()
+            teacher.wait_for_function('(old)=>document.querySelector("#issued-pin").value!==old',arg=old_pin)
+            new_pin=teacher.locator('#issued-pin').input_value()
+            student.locator('#student-class').select_option('1')
+            student.locator('#student-number').fill('1')
+            student.locator('#student-pin').fill(new_pin)
+            student.locator('#student-pin-access button').click()
+            student.wait_for_function("document.querySelector('#record-count').textContent==='3'")
             # Each of the other three teachers logs into a separate, empty classroom.
             for classroom in range(2,5):
                 other_context=browser.new_context(accept_downloads=True)

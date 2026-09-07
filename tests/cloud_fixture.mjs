@@ -11,6 +11,7 @@ export async function fixture(origin='https://classroom.example',{upgrade=true,i
   await db.exec(await readFile(new URL('../supabase/migrations/202609070001_classroom.sql',import.meta.url),'utf8'));
   if(initialize)await db.query('select public.dal_initialize($1,$2,$3)',['3학년 2반',password,28]);
   if(upgrade)await db.exec(await readFile(new URL('../supabase/migrations/202609070002_four_classrooms.sql',import.meta.url),'utf8'));
+  if(upgrade)await db.exec(await readFile(new URL('../supabase/migrations/202609070003_student_pin.sql',import.meta.url),'utf8'));
   const rpc=async(action,session_token='',payload={})=>{
     const result=await db.query('select public.dal_api($1,$2,$3::jsonb) as result',[action,session_token,JSON.stringify(payload)]);
     return result.rows[0].result;

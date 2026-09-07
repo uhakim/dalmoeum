@@ -4,6 +4,45 @@ import {readFile} from 'node:fs/promises';
 import {fixture,password} from './cloud_fixture.mjs';
 import {validateState} from '../supabase/functions/classroom/validation.js';
 
+test('class and number PIN login, persistent lockout and teacher-only reset',async t=>{
+  const {db,rpc,request}=await fixture();t.after(()=>db.close());
+  await db.query('select * from public.dal_initialize_four($1::text[])',[[password,password+'-2',password+'-3',password+'-4']]);
+  const publicData=await request('/api/classrooms');assert.equal(publicData.status,200);
+  assert.equal(publicData.body.classrooms.length,4);
+  assert.ok(publicData.body.classrooms.every(c=>Object.keys(c).sort().join(',')==='id,name'));
+  const teacher=(await rpc('login_teacher','',{password})).token;
+  const other=(await rpc('login_teacher','',{username:'teacher2',password:password+'-2'})).token;
+  const invitations=(await rpc('invitations',teacher)).students;
+  const pin=invitations[0].pin;assert.match(pin,/^\d{4}$/);
+  const login=await request('/api/auth/student-pin','POST',{classId:1,number:1,pin});
+  assert.equal(login.status,200);const token=login.body.token;
+  assert.equal((await rpc('me',token)).student.id,1);
+  assert.equal((await rpc('me',token)).classId,1);
+  assert.equal((await rpc('invitations',token)).status,403);
+  assert.equal((await request('/api/teacher/students/1/reset-pin','POST',{},other)).status,404);
+  assert.equal((await request('/api/teacher/students/1/reset-pin','POST',{},token)).status,403);
+  // Leading zeroes are significant; no numeric PIN coercion at the HTTP boundary.
+  assert.equal((await request('/api/auth/student-pin','POST',{classId:1,number:1,pin:Number(pin)})).status,400);
+  await db.query("update dal_private.students set login_pin='0007' where id=2");
+  assert.equal((await request('/api/auth/student-pin','POST',{classId:1,number:2,pin:'0007'})).status,200);
+  const wrong=pin==='0000'?'0001':'0000';
+  for(let i=0;i<4;i++)assert.equal((await request('/api/auth/student-pin','POST',{classId:1,number:1,pin:wrong})).status,401);
+  assert.equal((await request('/api/auth/student-pin','POST',{classId:1,number:1,pin:wrong})).status,429);
+  assert.equal((await request('/api/auth/student-pin','POST',{classId:1,number:1,pin})).status,429);
+  assert.equal((await rpc('invitations',teacher)).students[0].pinLocked,true);
+  const reset=await request('/api/teacher/students/1/reset-pin','POST',{},teacher);
+  assert.equal(reset.status,200);assert.notEqual(reset.body.pin,pin);
+  assert.equal((await rpc('me',token)).status,401);
+  assert.equal((await request('/api/auth/student-pin','POST',{classId:1,number:1,pin:reset.body.pin})).status,200);
+  assert.equal((await rpc('invitations',teacher)).students[0].pinLocked,false);
+  const backup=await rpc('backup_student',teacher,{id:1});assert.equal(backup.pin,undefined);assert.equal(backup.login_pin,undefined);
+  for(const role of ['anon','authenticated','service_role']){
+    await db.exec('set role '+role);
+    await assert.rejects(()=>db.query("select public.dal_api_links('login_student','','{}')"),/permission denied/);
+    await db.exec('reset role');
+  }
+});
+
 test('four classrooms isolate every teacher operation and student record',async t=>{
   const {db,rpc,request}=await fixture();t.after(()=>db.close());
   const passwords=[password,password+'-2',password+'-3',password+'-4'];

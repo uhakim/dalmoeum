@@ -29,6 +29,11 @@
       if(me.role!=='teacher')throw Error('선생님만 접속 안내 카드를 볼 수 있어요.');
       const data=await api('/api/teacher/invitations');const sheet=document.createElement('section');sheet.className='print-report link-sheet';
       sheet.innerHTML='<h2>'+escape(me.className)+' · 달모음 접속 안내</h2>'+data.students.map(s=>'<div class="invite-card"><h3>'+s.number+'번 '+escape(s.name)+'의 달 관찰 기록장</h3><p>부모님과 함께 아래 전용 주소로 접속해 주세요. 날짜를 누르고 사진이나 달 모양을 남기면 선생님이 확인하고 출력할 수 있어요.</p><img class="invite-qr" '+(DalCloud.enabled?'data-qr-src':'src')+'="/api/teacher/students/'+s.id+'/qr.svg" alt="학생 전용 접속 QR 코드"><code>'+escape(location.origin+s.path)+'</code><p>이 카드는 해당 학생 가정에만 전달해 주세요. 링크는 다른 친구에게 공유하지 않아요.</p></div>').join('');$('reports').append(sheet);$('print-info').textContent='학생별로 잘라 배부하세요. 전용 링크가 담겨 있어 전체 목록을 공유하면 안 돼요.';
+      if(DalCloud.enabled)sheet.querySelectorAll('.invite-card').forEach((card,index)=>{
+        const s=data.students[index],p=document.createElement('p'),strong=document.createElement('strong');
+        strong.textContent=me.className+' / '+s.number+'번 / PIN '+s.pin;
+        p.append(strong,document.createElement('br'),document.createTextNode(location.origin+'에서 반·번호·PIN으로 접속하세요.'));card.querySelector('h3').after(p);
+      });
     }else{
       const month=params.get('month');if(!/^(19\d{2}|20\d{2}|2100)-(0[1-9]|1[0-2])$/.test(month||''))throw Error('출력할 월을 선택해 주세요.');
       let reports;
