@@ -43,4 +43,3 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--supabase-url', required=True)
     build(parser.parse_args().supabase_url)
-

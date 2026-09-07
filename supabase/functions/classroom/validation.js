@@ -34,4 +34,3 @@ export function validateState(data) {
   if (new TextEncoder().encode(JSON.stringify(clean)).length > MAX_STATE_BYTES - 100000) throw Error('학생별 저장 용량(5MB)을 초과했어요. 기록을 내보낸 뒤 오래된 사진을 정리해 주세요.');
   return clean;
 }
-
