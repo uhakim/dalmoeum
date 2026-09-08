@@ -5,7 +5,7 @@ window.classroomReady = (async () => {
   const gate = document.createElement('section');
   gate.className = 'access-gate';
   gate.innerHTML = '<a class="brand" href="/">☾ 달모음</a><h1>우리 반 달 관찰 일지</h1><p>선생님에게 받은 나만의 접속 링크로 들어와 주세요.<br>링크는 다른 친구에게 공유하지 않아요.</p><form id="student-access"><label for="access-code">학생 접속 링크 또는 코드</label><input id="access-code" autocomplete="off" spellcheck="false" required><button class="primary" type="submit">내 기록장 열기</button></form><p id="access-message" role="status">접속을 확인하고 있어요…</p><a href="/teacher.html">선생님 관리 화면 →</a>';
-  document.body.append(gate);
+  document.body.insertBefore(gate, document.querySelector('.site-footer'));
   if(DalCloud.enabled){
     gate.querySelector('p').textContent='우리 반과 번호를 고르고 선생님에게 받은 4자리 PIN을 입력해 주세요.';
     const legacy=gate.querySelector('#student-access'),details=document.createElement('details'),summary=document.createElement('summary');

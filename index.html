@@ -33,6 +33,7 @@
       </aside>
     </div>
   </main>
+  <footer class="site-footer">동성초등학교</footer>
   <dialog id="editor"><form id="record-form"><div class="dialog-heading"><div><span class="eyebrow">오늘의 작은 발견</span><h2 id="editor-title">달 관찰 기록</h2></div><button type="button" id="close-editor" class="close" aria-label="닫기">×</button></div><div class="date-time"><label>관찰 날짜<input id="record-date" type="date" required min="1900-01-01" max="2100-12-31"></label><label>관찰 시각<input id="record-time" type="time"></label></div><fieldset><legend>어떤 달을 보았나요?</legend><p class="field-hint">닮은 모양을 누르면 기록지에 바로 들어가요.</p><div id="phases" class="phases"></div></fieldset><div class="photo-section"><div class="photo-buttons"><label class="upload-button" for="camera">사진 찍기<input id="camera" type="file" accept="image/*" capture="environment" hidden></label><label class="upload-button" for="photo-file">사진 선택<input id="photo-file" type="file" accept="image/*" hidden></label></div><p class="field-hint">사진을 넣으면 선택한 달 그림 대신 사진이 표시돼요.</p><div id="photo-preview" hidden><img id="preview-image" alt="관찰 사진 미리보기"><button id="remove-photo" type="button" class="text-button">사진 빼기</button></div></div><label class="note-label">한 줄 관찰<input id="record-note" maxlength="100" placeholder="예: 어제보다 달이 조금 더 커 보여요."></label><div class="dialog-actions"><button id="delete-record" type="button" class="danger" hidden>기록 삭제</button><button type="submit" id="save-record" class="primary">기록 저장하기</button></div></form></dialog>
   <div id="toast" role="status" aria-live="polite"></div>
 </body>
