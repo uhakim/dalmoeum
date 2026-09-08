@@ -8,12 +8,13 @@
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="classroom.css">
   <script src="cloud-config.js" defer></script><script src="cloud.js" defer></script><script src="classroom.js" defer></script>
+  <script src="moon.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
   <header class="app-header"><a class="brand" href="./index.html"><span class="brand-icon">☾</span> 달모음 <span class="brand-sub">우리 가족의 작은 관찰 습관</span></a><div class="header-actions"><button id="backup" class="text-button">기록 내보내기</button><button id="restore" class="text-button">불러오기</button><input id="backup-file" type="file" accept="application/json,.json" hidden></div></header>
   <main>
-    <section class="intro"><div><span class="eyebrow">하루 한 번, 하늘과 눈 맞추기</span><h1>오늘 밤, 달은 어떤 모양일까요?</h1><p>부모님과 함께 달을 찾아보고, 우리만의 관찰 기록을 남겨요.</p></div><div class="intro-moon" aria-hidden="true"><span>✦</span>☾<small>✧</small></div></section>
+    <section class="intro"><div><span class="eyebrow">하루 한 번, 하늘과 눈 맞추기</span><h1>오늘 밤, 달은 어떤 모양일까요?</h1><p>부모님과 함께 달을 찾아보고, 우리만의 관찰 기록을 남겨요.</p></div><div class="intro-moon" id="today-moon" aria-hidden="true"><span>✦</span>☾<small>✧</small></div></section>
     <div class="workspace">
       <section class="journal">
         <div class="journal-toolbar"><div><span class="eyebrow">MOON OBSERVATION</span><h2>달의 모양 관찰 보고서</h2></div><button id="print" class="primary">인쇄 / PDF 저장 <span aria-hidden="true">↗</span></button></div>
