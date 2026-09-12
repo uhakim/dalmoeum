@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/supabase.test.mjs",
+    "test": "node --test tests/moon.test.mjs tests/supabase.test.mjs",
     "test:browser": "python tests/test_supabase_browser.py"
   },
   "devDependencies": {
